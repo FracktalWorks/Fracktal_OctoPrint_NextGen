@@ -606,7 +606,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     def set_temperature(self, heater, value, *args, **kwargs):
         if not PrinterInterface.valid_heater_regex.match(heater):
             raise ValueError(
-                'heater must match "tool", "tool([0-9])", "bed" or "chamber": {heater}'.format(
+                'heater must match "tool", "tool([0-9])", "bed", "chamber", "filament" or "H([0-9])": {heater}'.format(
                     heater=heater
                 )
             )
@@ -636,6 +636,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         elif heater == "chamber":
             self.commands(f"M141 S{value}", tags=tags)
+
+        elif heater == "filament":
+            # Fracktal: heated filament (dry box / spool heater)
+            self.commands(f"M142 S{value}", tags=tags)
+
+        elif heater.startswith("H"):
+            # Fracktal: secondary heater H0, H1, ... (one per extruder)
+            self.commands(f"M104 H{int(heater[1:])} S{value}", tags=tags)
 
     def set_temperature_offset(self, offsets=None, *args, **kwargs):
         if offsets is None:

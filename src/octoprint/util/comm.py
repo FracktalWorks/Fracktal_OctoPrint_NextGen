@@ -82,6 +82,7 @@ regexes_parameters = {
     "floatX": re.compile(r"(^|[^A-Za-z])[Xx](?P<value>%s)" % regex_float_pattern),
     "floatY": re.compile(r"(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
     "floatZ": re.compile(r"(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
+    "intH": re.compile(r"(^|[^A-Za-z])[Hh](?P<value>%s)" % regex_int_pattern),
     "intN": re.compile(r"(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
     "intS": re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_int_pattern),
     "intT": re.compile(r"(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern),
@@ -488,6 +489,7 @@ class MachineCom:
     CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
     CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
     CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
+    CAPABILITY_FILAMENT_TEMP = "FILAMENT_TEMPERATURE"
     CAPABILITY_EXTENDED_M20 = "EXTENDED_M20"
     CAPABILITY_LFN_WRITE = "LFN_WRITE"
 
@@ -2240,6 +2242,17 @@ class MachineCom:
             actual, target = parsedTemps["C"]
             del parsedTemps["C"]
             self.last_temperature.set_chamber(actual=actual, target=target)
+
+        # Fracktal: heated filament ("F:") is reported to clients as the custom
+        # sensor "filament"; secondary heaters ("H0:", "H1:", ...) pass through
+        # unchanged as custom sensors "H0", "H1", ...
+        if "F" in parsedTemps and (
+            self._capability_supported(self.CAPABILITY_FILAMENT_TEMP)
+            or self._printerProfileManager.get_current_or_default().get(
+                "heatedFilament", False
+            )
+        ):
+            parsedTemps["filament"] = parsedTemps.pop("F")
 
         # all other injected temperatures or temperature-like entries
         for key, data in parsedTemps.items():
@@ -5299,6 +5312,27 @@ class MachineCom:
 
     _gcode_M191_queuing = _gcode_M141_queuing
 
+    def _gcode_M142_queuing(
+        self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
+    ):
+        if not self._printerProfileManager.get_current_or_default().get(
+            "heatedFilament", False
+        ):
+            message = (
+                'Not sending "{}", printer profile has no heated filament heater. Either '
+                "configure a heated filament heater or remove filament commands from your "
+                "GCODE.".format(cmd)
+            )
+            self._log("Warn: " + message)
+            self._logger.warning(message)
+            eventManager().fire(
+                Events.COMMAND_SUPPRESSED,
+                {"command": cmd, "message": message, "severity": "warn"},
+            )
+            return (None,)  # Don't send filament commands without a filament heater
+
+    _gcode_M192_queuing = _gcode_M142_queuing
+
     def _gcode_M104_sent(
         self,
         cmd,
@@ -5310,6 +5344,28 @@ class MachineCom:
         *args,
         **kwargs,
     ):
+        heaterMatch = regexes_parameters["intH"].search(cmd)
+        if heaterMatch and self._printerProfileManager.get_current_or_default().get(
+            "hasSecondaryHeaters", False
+        ):
+            # Fracktal: "M104 H<n> S<temp>" addresses secondary heater n, not a tool
+            match = regexes_parameters["floatS"].search(cmd)
+            if match:
+                try:
+                    self.last_temperature.set_custom(
+                        "H%d" % int(heaterMatch.group("value")),
+                        target=float(match.group("value")),
+                    )
+                    self._callback.on_comm_temperature_update(
+                        self.last_temperature.tools,
+                        self.last_temperature.bed,
+                        self.last_temperature.chamber,
+                        self.last_temperature.custom,
+                    )
+                except ValueError:
+                    pass
+            return
+
         toolNum = self._currentTool
         toolMatch = regexes_parameters["intT"].search(cmd)
 
@@ -5392,6 +5448,42 @@ class MachineCom:
                 )
             except ValueError:
                 pass
+
+    def _gcode_M142_sent(
+        self,
+        cmd,
+        cmd_type=None,
+        gcode=None,
+        subcode=None,
+        wait=False,
+        support_r=False,
+        *args,
+        **kwargs,
+    ):
+        match = regexes_parameters["floatS"].search(cmd)
+        if not match and support_r:
+            match = regexes_parameters["floatR"].search(cmd)
+
+        if match:
+            try:
+                target = float(match.group("value"))
+                self.last_temperature.set_custom("filament", target=target)
+                self._callback.on_comm_temperature_update(
+                    self.last_temperature.tools,
+                    self.last_temperature.bed,
+                    self.last_temperature.chamber,
+                    self.last_temperature.custom,
+                )
+            except ValueError:
+                pass
+
+    def _gcode_M192_sent(
+        self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
+    ):
+        self._heatupWaitStartTime = time.monotonic()
+        self._long_running_command = True
+        self._heating = True
+        self._gcode_M142_sent(cmd, cmd_type, wait=True, support_r=True)
 
     def _gcode_M109_sent(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs

@@ -2289,7 +2289,7 @@ class SlicerPlugin(OctoPrintPlugin):
         """
         from octoprint.filemanager import ContentTypeMapping
 
-        return {"model": {"stl": ContentTypeMapping(["stl"], "application/sla")}}
+        return {"model": {"stl": ContentTypeMapping(["stl", "png"], "application/sla")}}
 
     def get_slicer_profiles(self, profile_path):
         """

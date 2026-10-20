@@ -18,12 +18,18 @@ class TemperatureProfile(BaseModel):
     bed: int
     """Bed temperature to set with the profile."""
 
+    chamber: int = 0
+    """Chamber temperature to set with the profile (Fracktal)."""
+
+    filament: int = 0
+    """Heated filament temperature to set with the profile (Fracktal)."""
+
 
 @with_attrs_docs
 class TemperatureConfig(BaseModel):
     profiles: List[TemperatureProfile] = [
-        TemperatureProfile(name="ABS", extruder=210, bed=100),
-        TemperatureProfile(name="PLA", extruder=180, bed=60),
+        TemperatureProfile(name="ABS", extruder=210, bed=100, chamber=0, filament=0),
+        TemperatureProfile(name="PLA", extruder=180, bed=60, chamber=0, filament=0),
     ]
     """Temperature profiles to offer in the UI for quick pre-heating."""
 

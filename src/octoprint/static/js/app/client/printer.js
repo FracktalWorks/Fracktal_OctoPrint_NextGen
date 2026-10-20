@@ -10,6 +10,7 @@
     var toolUrl = url + "/tool";
     var bedUrl = url + "/bed";
     var chamberUrl = url + "/chamber";
+    var filamentUrl = url + "/filament";
     var sdUrl = url + "/sd";
     var errorUrl = url + "/error";
 
@@ -43,6 +44,14 @@
         opts
     ) {
         return this.base.issueCommand(chamberUrl, command, payload, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.issueFilamentCommand = function (
+        command,
+        payload,
+        opts
+    ) {
+        return this.base.issueCommand(filamentUrl, command, payload, opts);
     };
 
     OctoPrintPrinterClient.prototype.issueSdCommand = function (command, payload, opts) {
@@ -115,6 +124,23 @@
         var limit = flags.limit || undefined;
 
         var getUrl = chamberUrl;
+        if (history) {
+            getUrl += "?history=true";
+            if (limit) {
+                getUrl += "&limit=" + limit;
+            }
+        }
+
+        return this.base.get(getUrl, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.getFilamentState = function (flags, opts) {
+        flags = flags || {};
+
+        var history = flags.history || undefined;
+        var limit = flags.limit || undefined;
+
+        var getUrl = filamentUrl;
         if (history) {
             getUrl += "?history=true";
             if (limit) {
@@ -267,6 +293,67 @@
         };
 
         return this.issueChamberCommand("offset", payload, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.setFilamentTargetTemperature = function (
+        target,
+        opts
+    ) {
+        target = target || 0;
+
+        var payload = {
+            target: target
+        };
+
+        return this.issueFilamentCommand("target", payload, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.setFilamentTemperatureOffset = function (
+        offset,
+        opts
+    ) {
+        offset = offset || 0;
+
+        var payload = {
+            offset: offset
+        };
+
+        return this.issueFilamentCommand("offset", payload, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.setSecondaryHeaterTargetTemperature = function (
+        heater,
+        target,
+        opts
+    ) {
+        target = target || 0;
+
+        var payload = {
+            target: target
+        };
+
+        var heaterUrl = url + "/heater/" + heater;
+        return this.base.issueCommand(heaterUrl, "target", payload, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.setSecondaryHeaterTemperatureOffset = function (
+        heater,
+        offset,
+        opts
+    ) {
+        offset = offset || 0;
+
+        var payload = {
+            offset: offset
+        };
+
+        var heaterUrl = url + "/heater/" + heater;
+        return this.base.issueCommand(heaterUrl, "offset", payload, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.getSecondaryHeaterState = function (heater, opts) {
+        var heaterUrl = url + "/heater/" + heater;
+        return this.base.get(heaterUrl, opts);
     };
 
     OctoPrintPrinterClient.prototype.initSd = function (opts) {

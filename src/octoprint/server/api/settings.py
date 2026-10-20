@@ -1111,10 +1111,16 @@ def _saveSettings(data):
             result = []
             for profile in data["temperature"]["profiles"]:
                 try:
-                    profile["bed"] = int(profile["bed"])
-                    profile["extruder"] = int(profile["extruder"])
-                except ValueError:
-                    pass
+                    profile["bed"] = int(profile.get("bed", 0))
+                    profile["extruder"] = int(profile.get("extruder", 0))
+                    profile["chamber"] = int(profile.get("chamber", 0))
+                    profile["filament"] = int(profile.get("filament", 0))
+                except (ValueError, TypeError):
+                    # Set defaults if conversion fails
+                    profile.setdefault("bed", 0)
+                    profile.setdefault("extruder", 0)
+                    profile.setdefault("chamber", 0)
+                    profile.setdefault("filament", 0)
                 result.append(profile)
             s.set(["temperature", "profiles"], result)
         if "cutoff" in data["temperature"]:

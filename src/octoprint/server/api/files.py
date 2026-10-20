@@ -1347,6 +1347,13 @@ def deleteGcodeFile(filename, target):
             except (OSError, StorageError) as e:
                 _abortWithException(e)
 
+            # Fracktal: also remove the sibling thumbnail uploaded with the gcode
+            if target == FileDestinations.LOCAL and filename.lower().endswith(".gcode"):
+                try:
+                    fileManager.remove_file(target, filename[: -len(".gcode")] + ".png")
+                except (OSError, StorageError):
+                    pass
+
     elif _verifyFolderExists(target, filename):
         if _isBusy(target, filename):
             abort(

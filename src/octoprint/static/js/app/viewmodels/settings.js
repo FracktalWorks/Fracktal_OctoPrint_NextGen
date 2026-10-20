@@ -415,7 +415,8 @@ $(function () {
                 name: "New",
                 extruder: 0,
                 bed: 0,
-                chamber: 0
+                chamber: 0,
+                filament: 0
             });
         };
 
@@ -1036,6 +1037,13 @@ $(function () {
                                             ? profile.chamber
                                             : _.isNumber(parseInt(profile.chamber))
                                             ? parseInt(profile.chamber)
+                                            : 0
+                                    ),
+                                    filament: Math.floor(
+                                        _.isNumber(profile.filament)
+                                            ? profile.filament
+                                            : _.isNumber(parseInt(profile.filament))
+                                            ? parseInt(profile.filament)
                                             : 0
                                     )
                                 });

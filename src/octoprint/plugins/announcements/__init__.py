@@ -84,7 +84,7 @@ class AnnouncementPlugin(
                 "_important": {
                     "name": "Important Announcements",
                     "description": "Important announcements about OctoPrint.",
-                    "priority": 1,
+                    "priority": 2,
                     "type": "rss",
                     "url": "https://octoprint.org/feeds/important.xml",
                 },

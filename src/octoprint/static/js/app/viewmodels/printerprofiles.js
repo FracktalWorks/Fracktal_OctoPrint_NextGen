@@ -15,6 +15,8 @@ $(function () {
             },
             heatedBed: true,
             heatedChamber: false,
+            heatedFilament: false,
+            hasSecondaryHeaters: false,
             axes: {
                 x: {speed: 6000, inverted: false},
                 y: {speed: 6000, inverted: false},
@@ -68,6 +70,8 @@ $(function () {
 
         self.heatedBed = ko.observable();
         self.heatedChamber = ko.observable();
+        self.heatedFilament = ko.observable();
+        self.hasSecondaryHeaters = ko.observable();
 
         self.nozzleDiameter = ko.observable();
         self.extruders = ko.observable();
@@ -242,6 +246,8 @@ $(function () {
 
             self.heatedBed(data.heatedBed);
             self.heatedChamber(data.heatedChamber);
+            self.heatedFilament(data.heatedFilament);
+            self.hasSecondaryHeaters(data.hasSecondaryHeaters);
 
             self.nozzleDiameter(data.extruder.nozzleDiameter);
             self.sharedNozzle(data.extruder.sharedNozzle);
@@ -335,6 +341,8 @@ $(function () {
                 },
                 heatedBed: self.heatedBed(),
                 heatedChamber: self.heatedChamber(),
+                heatedFilament: self.heatedFilament(),
+                hasSecondaryHeaters: self.hasSecondaryHeaters(),
                 extruder: {
                     count: runChecks(parseInt(self.extruders()), 1, {gt: 0, lt: 100}),
                     offsets: [[0.0, 0.0]],

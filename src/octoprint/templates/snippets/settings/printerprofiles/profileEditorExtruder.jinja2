@@ -16,6 +16,13 @@
             <span class="help-block">{{ _('Make sure to specify number of extruders available on your printer or you might run into issues') }}</span>
         </div>
     </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Secondary Heaters') }}</label>
+        <div class="controls">
+            <input type="checkbox" data-bind="checked: hasSecondaryHeaters">
+            <span class="help-block">{{ _('Check this if your printer has secondary heaters (H0, H1, etc.) that are controlled independently from the tool heaters') }}</span>
+        </div>
+    </div>
     <div data-bind="visible: extruders() > 1" style="display: none">
         <div class="control-group">
             <label class="control-label">{{ _('Shared nozzle') }}</label>

@@ -1,0 +1,110 @@
+# Fracktal Works default OctoPrint configuration (OctoPrint 1.11.x fork).
+#
+# This is a TEMPLATE. install-octoprint.sh copies it to ~/.octoprint/config.yaml on
+# a printer that has none, then adds the per-printer values it generates there
+# (`api.key` and `server.secretKey`). An existing config.yaml is NEVER overwritten.
+#
+# NOTE: the access-control section (auto-login on the LAN, open CORS) is NOT in this
+# file yet -- it is pending explicit sign-off, see fracktal/README.md "Open items".
+appearance:
+  name: Fracktal Works
+feature:
+  sdSupport: false
+printerProfiles:
+  default: _default
+serial:
+  # Klipper exposes a pseudo-terminal at /tmp/printer.
+  port: /tmp/printer
+  additionalPorts:
+    - /tmp/printer
+  blacklistedPorts:
+    - /dev/ttyS*
+  autoconnect: true
+  # Baud rate is irrelevant on a pty; it only influences OctoPrint's timeouts.
+  baudrate: 250000
+  disconnectOnErrors: false
+  ignoreErrorsFromFirmware: true
+  # A pty never corrupts data: skip checksums / resend bookkeeping that Klipper ignores.
+  neverSendChecksum: true
+  sendChecksumWithUnknownCommands: false
+  unknownCommandsNeedAck: false
+  supportResendsWithoutOk: true
+  capabilities:
+    autoreport_temp: true
+    autoreport_pos: true
+server:
+  host: 0.0.0.0
+  port: 5000
+  firstRun: false
+  seenWizards:
+    corewizard: 4
+    backup: null
+    tracking: null
+  commands:
+    serverRestartCommand: sudo systemctl restart octoprint
+    systemRestartCommand: sudo reboot now
+    systemShutdownCommand: sudo shutdown now
+  onlineCheck:
+    enabled: true
+  pluginBlacklist:
+    enabled: true
+plugins:
+  _disabled:
+    - pi_support
+    - tracking
+    - errortracking
+    - achievements
+  announcements:
+    enabled_channels: []
+  tracking:
+    enabled: false
+  virtual_printer:
+    enabled: false
+  klipper:
+    configuration:
+      confirm_reload: false
+      logpath: /home/pi/printer_data/logs/klippy.log
+    connection:
+      replace_connection_panel: false
+  softwareupdate:
+    # OctoPrint itself is checked against FracktalWorks/OctoPrintUpdates- releases
+    # (built into the fork: src/octoprint/plugins/softwareupdate/__init__.py).
+    checks:
+      ControlCenter:
+        type: github_release
+        user: FracktalWorks
+        repo: ControlCenter
+        method: pip
+        pip: https://github.com/FracktalWorks/ControlCenter/archive/{target_version}.zip
+        release_notes: https://github.com/FracktalWorks/ControlCenter/releases/tag/{target_version}
+        prerelease: false
+        disabled: false
+      pi_support:
+        disabled: true
+system:
+  actions:
+    - action: streamon
+      command: sudo systemctl start webcamd
+      confirm: false
+      name: Start video stream
+    - action: streamoff
+      command: sudo systemctl stop webcamd
+      confirm: false
+      name: Stop video stream
+temperature:
+  profiles:
+    - name: ABS
+      extruder: 210
+      bed: 100
+      chamber: 0
+      filament: 0
+    - name: PLA
+      extruder: 180
+      bed: 60
+      chamber: 0
+      filament: 0
+webcam:
+  ffmpeg: /usr/bin/ffmpeg
+  snapshot: http://127.0.0.1:8080/?action=snapshot
+  stream: /webcam/?action=stream
+  streamRatio: '4:3'

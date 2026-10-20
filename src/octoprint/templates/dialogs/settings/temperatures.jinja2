@@ -31,20 +31,30 @@
     </div>
     <h3>{{ _('Presets') }}</h3>
     <div class="row-fluid">
-        <div class="offset4 span3"><h4>{{ _('Extruder') }}</h4></div>
-        <div class="span3"><h4>{{ _('Bed') }}</h4></div>
+        <div class="offset2 span2"><h4>{{ _('Extruder') }}</h4></div>
+        <div class="span2"><h4>{{ _('Bed') }}</h4></div>
+        <div class="span2"><h4>{{ _('Chamber') }}</h4></div>
+        <div class="span2"><h4>{{ _('Filament') }}</h4></div>
     </div>
     <div data-bind="foreach: temperature_profiles">
         <div class="row-fluid" style="margin-bottom: 5px">
-            <div class="span4">
+            <div class="span2">
                 <input type="text" class="span12 text-right" data-bind="value: name">
             </div>
-            <div class="input-append span3">
+            <div class="input-append span2">
                 <input type="number" min="0" step="1" class="input-mini text-right" data-bind="value: extruder">
                 <span class="add-on">&deg;C</span>
             </div>
-            <div class="input-append span3">
+            <div class="input-append span2">
                 <input type="number" min="0" step="1" class="input-mini text-right" data-bind="value: bed">
+                <span class="add-on">&deg;C</span>
+            </div>
+            <div class="input-append span2">
+                <input type="number" min="0" step="1" class="input-mini text-right" data-bind="value: chamber">
+                <span class="add-on">&deg;C</span>
+            </div>
+            <div class="input-append span2">
+                <input type="number" min="0" step="1" class="input-mini text-right" data-bind="value: filament">
                 <span class="add-on">&deg;C</span>
             </div>
             <div class="span2">

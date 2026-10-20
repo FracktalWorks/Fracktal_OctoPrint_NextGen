@@ -41,12 +41,15 @@ def printerState():
         processor = lambda x: x
         heated_bed = printerProfileManager.get_current_or_default()["heatedBed"]
         heated_chamber = printerProfileManager.get_current_or_default()["heatedChamber"]
-        if not heated_bed and not heated_chamber:
+        heated_filament = printerProfileManager.get_current_or_default()["heatedFilament"]
+        if not heated_bed and not heated_chamber and not heated_filament:
             processor = _keep_tools
         elif not heated_bed:
             processor = _delete_bed
         elif not heated_chamber:
             processor = _delete_chamber
+        elif not heated_filament:
+            processor = _delete_filament
 
         result.update({"temperature": _get_temperature_data(processor)})
 
@@ -287,6 +290,145 @@ def printerChamberState():
         return jsonify(data)
 
 
+##~~ Heated filament
+
+
+@api.route("/printer/filament", methods=["POST"])
+@no_firstrun_access
+@Permissions.CONTROL.require(403)
+def printerFilamentCommand():
+    if not printer.is_operational():
+        abort(409, description="Printer is not operational")
+
+    if not printerProfileManager.get_current_or_default()["heatedFilament"]:
+        abort(409, description="Printer does not have a heated filament heater")
+
+    valid_commands = {"target": ["target"], "offset": ["offset"]}
+    command, data, response = get_json_command_from_request(request, valid_commands)
+    if response is not None:
+        return response
+
+    tags = {"source:api", "api:printer.filament"}
+
+    ##~~ temperature
+    if command == "target":
+        target = data["target"]
+
+        # make sure the target is a number
+        if not isinstance(target, (int, float)):
+            abort(400, description="target is invalid")
+
+        # perform the actual temperature command
+        printer.set_temperature("filament", target, tags=tags)
+
+    ##~~ temperature offset
+    elif command == "offset":
+        offset = data["offset"]
+
+        # make sure the offset is valid
+        if not isinstance(offset, (int, float)) or not -50 <= offset <= 50:
+            abort(400, description="offset is invalid")
+
+        # set the offsets
+        printer.set_temperature_offset({"filament": offset})
+
+    return NO_CONTENT
+
+
+@api.route("/printer/filament", methods=["GET"])
+@no_firstrun_access
+@Permissions.STATUS.require(403)
+def printerFilamentState():
+    if not printer.is_operational():
+        abort(409, description="Printer is not operational")
+
+    if not printerProfileManager.get_current_or_default()["heatedFilament"]:
+        abort(409, description="Printer does not have a heated filament heater")
+
+    data = _get_temperature_data(_keep_filament)
+    if isinstance(data, Response):
+        return data
+    else:
+        return jsonify(data)
+
+
+##~~ Secondary heaters
+
+
+@api.route("/printer/heater/<int:heater_num>", methods=["POST"])
+@no_firstrun_access
+@Permissions.CONTROL.require(403)
+def printerSecondaryHeaterCommand(heater_num):
+    if not printer.is_operational():
+        abort(409, description="Printer is not operational")
+
+    profile = printerProfileManager.get_current_or_default()
+    if not profile.get("hasSecondaryHeaters", False):
+        abort(409, description="Printer does not have secondary heaters")
+
+    extruder_count = profile["extruder"]["count"]
+    if heater_num < 0 or heater_num >= extruder_count:
+        abort(400, description="Invalid heater number")
+
+    valid_commands = {"target": ["target"], "offset": ["offset"]}
+    command, data, response = get_json_command_from_request(request, valid_commands)
+    if response is not None:
+        return response
+
+    tags = {"source:api", "api:printer.heater"}
+    heater_key = "H%d" % heater_num
+
+    ##~~ temperature
+    if command == "target":
+        target = data["target"]
+
+        # make sure the target is a number
+        if not isinstance(target, (int, float)):
+            abort(400, description="target is invalid")
+
+        # perform the actual temperature command
+        printer.set_temperature(heater_key, target, tags=tags)
+
+    ##~~ temperature offset
+    elif command == "offset":
+        offset = data["offset"]
+
+        # make sure the offset is valid
+        if not isinstance(offset, (int, float)) or not -50 <= offset <= 50:
+            abort(400, description="offset is invalid")
+
+        # set the offsets
+        printer.set_temperature_offset({heater_key: offset})
+
+    return NO_CONTENT
+
+
+@api.route("/printer/heater/<int:heater_num>", methods=["GET"])
+@no_firstrun_access
+@Permissions.STATUS.require(403)
+def printerSecondaryHeaterState(heater_num):
+    if not printer.is_operational():
+        abort(409, description="Printer is not operational")
+
+    profile = printerProfileManager.get_current_or_default()
+    if not profile.get("hasSecondaryHeaters", False):
+        abort(409, description="Printer does not have secondary heaters")
+
+    extruder_count = profile["extruder"]["count"]
+    if heater_num < 0 or heater_num >= extruder_count:
+        abort(400, description="Invalid heater number")
+
+    def _keep_heater(entry):
+        heater_key = "H%d" % heater_num
+        return heater_key in entry
+
+    data = _get_temperature_data(_keep_heater)
+    if isinstance(data, Response):
+        return data
+    else:
+        return jsonify(data)
+
+
 ##~~ Print head
 
 
@@ -503,6 +645,14 @@ def _keep_chamber(x):
 
 def _delete_chamber(x):
     return _delete_from_data(x, lambda k: k == "chamber")
+
+
+def _keep_filament(x):
+    return _delete_from_data(x, lambda k: k != "filament" and k != "history")
+
+
+def _delete_filament(x):
+    return _delete_from_data(x, lambda k: k == "filament")
 
 
 def _delete_from_data(x, key_matcher):

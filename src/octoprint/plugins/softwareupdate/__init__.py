@@ -671,32 +671,31 @@ class SoftwareUpdatePlugin(
         return {
             "checks": {
                 "octoprint": {
+                    # Fracktal Works fork of OctoPrint (1.11.x line). Printers on
+                    # this fork update ONLY from this repository's GitHub
+                    # releases. Older printers (OctoPrint 1.7.x) update from the
+                    # separate FracktalWorks/Fracktal_OctoPrint repository and
+                    # must never be pointed here (Python 3.7 cannot run 1.11).
                     "type": "github_release",
-                    "user": "foosel",
-                    "repo": "OctoPrint",
+                    "user": "FracktalWorks",
+                    "repo": "OctoPrintUpdates-",
                     "method": "pip",
-                    "pip": "https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip",
+                    "pip": "https://github.com/FracktalWorks/OctoPrintUpdates-/archive/{target_version}.zip",
                     "update_script": default_update_script,
                     "restart": "octoprint",
+                    # A release is offered on the "Stable" channel when it was
+                    # created from branch `production`; on "Beta" when created
+                    # from `beta` (use that channel on test printers first).
                     "stable_branch": {
-                        "branch": "master",
-                        "commitish": ["master", "main"],
+                        "branch": "production",
+                        "commitish": ["production"],
                         "name": "Stable",
                     },
                     "prerelease_branches": [
                         {
-                            "branch": "rc/maintenance",
-                            "commitish": ["rc/maintenance", "next"],  # maintenance RCs
-                            "name": "Maintenance RCs",
-                        },
-                        {
-                            "branch": "rc/devel",
-                            "commitish": [
-                                "rc/maintenance",
-                                "rc/devel",
-                                "next",
-                            ],  # devel & maintenance RCs
-                            "name": "Devel RCs",
+                            "branch": "beta",
+                            "commitish": ["beta", "production"],
+                            "name": "Beta (test printers)",
                         },
                     ],
                 },
