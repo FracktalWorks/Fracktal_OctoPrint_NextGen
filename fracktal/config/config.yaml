@@ -4,8 +4,24 @@
 # a printer that has none, then adds the per-printer values it generates there
 # (`api.key` and `server.secretKey`). An existing config.yaml is NEVER overwritten.
 #
-# NOTE: the access-control section (auto-login on the LAN, open CORS) is NOT in this
-# file yet -- it is pending explicit sign-off, see fracktal/README.md "Open items".
+# Access is deliberately relaxed (owner decision): clients on private networks are logged in
+# automatically as `admin` and the API allows cross-origin calls. The base image firewall
+# (nftables) is what restricts printers to the LAN -- never expose a printer to the internet.
+accessControl:
+  autologinLocal: true
+  autologinAs: admin
+  autologinHeadsupAcknowledged: true
+  localNetworks:
+    - 127.0.0.0/8
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - 169.254.0.0/16
+    - ::1/128
+    - fc00::/7
+    - fe80::/10
+api:
+  allowCrossOrigin: true
 appearance:
   name: Fracktal Works
 feature:
@@ -28,7 +44,7 @@ serial:
   neverSendChecksum: true
   sendChecksumWithUnknownCommands: false
   unknownCommandsNeedAck: false
-  supportResendsWithoutOk: true
+  supportResendsWithoutOk: never
   capabilities:
     autoreport_temp: true
     autoreport_pos: true
@@ -37,9 +53,9 @@ server:
   port: 5000
   firstRun: false
   seenWizards:
-    corewizard: 4
-    backup: null
-    tracking: null
+    corewizard: "4"
+    backup: ""
+    tracking: ""
   commands:
     serverRestartCommand: sudo systemctl restart octoprint
     systemRestartCommand: sudo reboot now
@@ -85,11 +101,11 @@ system:
   actions:
     - action: streamon
       command: sudo systemctl start webcamd
-      confirm: false
+      confirm: ''
       name: Start video stream
     - action: streamoff
       command: sudo systemctl stop webcamd
-      confirm: false
+      confirm: ''
       name: Stop video stream
 temperature:
   profiles:

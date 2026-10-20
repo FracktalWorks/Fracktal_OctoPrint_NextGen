@@ -55,8 +55,9 @@ Printers check GitHub releases of **this repository** (`github_release`, built i
 ## Configuration defaults
 
 `fracktal/config/config.yaml` is the template: serial port `/tmp/printer` (Klipper pty), no checksums, autoconnect, tracking and
-error reporting off, wizard skipped, listen on all interfaces. **Open items**: LAN auto-login and open CORS are not enabled in the
-template yet; they are pending explicit sign-off.
+error reporting off, wizard skipped, listen on all interfaces. Access is deliberately relaxed: clients on private networks are
+auto-logged-in as `admin` and cross-origin API calls are allowed, so ControlCenter and tools connect without a login.
+The base-image firewall restricts printers to the LAN; do not expose one to the internet.
 
 ## Rebasing on upstream OctoPrint
 

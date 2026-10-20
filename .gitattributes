@@ -7,3 +7,5 @@ src/octoprint/static/less/mixins.less linguist-vendored
 src/octoprint/static/less/variables.less linguist-vendored
 
 docs/* linguist-documentation
+fracktal/**/*.sh text eol=lf
+fracktal/systemd/* text eol=lf
