@@ -83,7 +83,7 @@ plugins:
     connection:
       replace_connection_panel: false
   softwareupdate:
-    # OctoPrint itself is checked against FracktalWorks/OctoPrintUpdates- releases
+    # OctoPrint itself is checked against FracktalWorks/Fracktal_OctoPrint_NextGen releases
     # (built into the fork: src/octoprint/plugins/softwareupdate/__init__.py).
     checks:
       ControlCenter:

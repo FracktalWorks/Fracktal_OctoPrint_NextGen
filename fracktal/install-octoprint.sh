@@ -15,7 +15,7 @@
 # reverts), and on older Debian 10-12 printers.
 set -euo pipefail
 
-OP_REPO="FracktalWorks/OctoPrintUpdates-"
+OP_REPO="FracktalWorks/Fracktal_OctoPrint_NextGen"
 CC_REPO="FracktalWorks/ControlCenter"
 USER_NAME="$(id -un)"
 HOME_DIR="$HOME"

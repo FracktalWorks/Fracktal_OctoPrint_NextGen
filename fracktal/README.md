@@ -1,4 +1,4 @@
-# Fracktal Works OctoPrint (1.11.x fork)
+# Fracktal OctoPrint NextGen (1.11.x)
 
 OctoPrint 1.11.8 plus the changes Fracktal Works printers need. This is the OctoPrint for **new-generation printers**
 (Debian 13, Python 3.13). Printers on the old OctoPrint 1.7.x keep using
@@ -7,7 +7,7 @@ OctoPrint 1.11.8 plus the changes Fracktal Works printers need. This is the Octo
 | | Old printers | New printers (this repo) |
 |---|---|---|
 | OctoPrint | 1.7.x, Python 3.7 | 1.11.x, Python 3.9-3.13 |
-| Updates come from | `FracktalWorks/Fracktal_OctoPrint` releases | `FracktalWorks/OctoPrintUpdates-` releases, branch `production` |
+| Updates come from | `FracktalWorks/Fracktal_OctoPrint` releases | `FracktalWorks/Fracktal_OctoPrint_NextGen` releases, branch `production` |
 
 **Never publish a release of this fork in `Fracktal_OctoPrint`**, and never point an old printer here: Python 3.7 cannot run 1.11.
 

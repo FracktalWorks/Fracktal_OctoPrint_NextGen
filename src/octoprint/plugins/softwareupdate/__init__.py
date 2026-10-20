@@ -678,9 +678,9 @@ class SoftwareUpdatePlugin(
                     # must never be pointed here (Python 3.7 cannot run 1.11).
                     "type": "github_release",
                     "user": "FracktalWorks",
-                    "repo": "OctoPrintUpdates-",
+                    "repo": "Fracktal_OctoPrint_NextGen",
                     "method": "pip",
-                    "pip": "https://github.com/FracktalWorks/OctoPrintUpdates-/archive/{target_version}.zip",
+                    "pip": "https://github.com/FracktalWorks/Fracktal_OctoPrint_NextGen/archive/{target_version}.zip",
                     "update_script": default_update_script,
                     "restart": "octoprint",
                     # A release is offered on the "Stable" channel when it was
