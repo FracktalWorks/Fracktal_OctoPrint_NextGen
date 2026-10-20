@@ -1,3 +1,11 @@
+> # Fracktal Works OctoPrint for NEW-generation printers (1.11.x)
+>
+> Use branch **`production`** (the default). It is OctoPrint 1.11.8 plus Fracktal changes; see
+> [`fracktal/README.md`](fracktal/README.md) for what differs, how to install/upgrade/roll back on a printer, and how updates
+> are released. The `dev` branch is an old experiment on the unreleased OctoPrint 2.0 line and is **not** used on printers.
+>
+> Old-generation printers (OctoPrint 1.7.x) use [`Fracktal_OctoPrint`](https://github.com/FracktalWorks/Fracktal_OctoPrint) instead.
+
 <p align="center"><img src="https://octoprint.org/assets/img/logo.png" alt="OctoPrint's logo" /></p>
 
 <h1 align="center">OctoPrint</h1>
