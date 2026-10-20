@@ -1,0 +1,61 @@
+name: Fracktal release
+
+# Push a tag such as 1.11.8.post1 from branch `production` (Stable channel) or `beta`
+# (Beta channel). The workflow tests, builds and publishes the GitHub Release that
+# printers on this fork see as an update.
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out the release branch
+        id: branch
+        run: |
+          for b in production beta; do
+            if git branch -r --contains "$GITHUB_SHA" | grep -qx "  origin/$b"; then
+              echo "branch=$b" >> "$GITHUB_OUTPUT"; break
+            fi
+          done
+          test -s "$GITHUB_OUTPUT" || { echo "Tag $GITHUB_REF_NAME is on neither production nor beta"; exit 1; }
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Test
+        run: |
+          pip install -e ".[develop]"
+          pytest tests -q -p no:cacheprovider --ignore=tests/playwright --ignore=tests/manual_tests -W ignore
+
+      - name: Build
+        run: |
+          pip install build
+          python -m build
+          python - <<'PY'
+          import glob, os
+          tag = os.environ["GITHUB_REF_NAME"]
+          for f in glob.glob("dist/*"):
+              print(f)
+          assert any(tag in f for f in glob.glob("dist/*")), f"built version does not match tag {tag}"
+          PY
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.branch.outputs.branch }}
+        run: |
+          flags=""
+          [ "$BRANCH" = "beta" ] && flags="--prerelease"
+          gh release create "$GITHUB_REF_NAME" dist/* fracktal/install-octoprint.sh \
+            --target "$BRANCH" --title "Fracktal OctoPrint $GITHUB_REF_NAME" --generate-notes $flags
