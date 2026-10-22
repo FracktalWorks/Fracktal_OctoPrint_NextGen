@@ -53,9 +53,9 @@ server:
   port: 5000
   firstRun: false
   seenWizards:
-    corewizard: "4"
-    backup: ""
-    tracking: ""
+    corewizard: 4
+    backup: null
+    tracking: null
   commands:
     serverRestartCommand: sudo systemctl restart octoprint
     systemRestartCommand: sudo reboot now
@@ -101,11 +101,11 @@ system:
   actions:
     - action: streamon
       command: sudo systemctl start webcamd
-      confirm: ''
+      confirm: false
       name: Start video stream
     - action: streamoff
       command: sudo systemctl stop webcamd
-      confirm: ''
+      confirm: false
       name: Stop video stream
 temperature:
   profiles:
