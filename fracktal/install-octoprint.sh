@@ -24,14 +24,13 @@ VENV="${HOME_DIR}/OctoPrint/venv"
 BASEDIR="${HOME_DIR}/.octoprint"
 VERSION=""          # empty = latest GitHub release of $OP_REPO
 SOURCE=""           # URL / wheel / sdist / source dir; overrides --version
-# Pinned to pre-release TAGS (not GitHub releases): an archive of a tag carries a real version number, so
-# OctoPrint's Software Update does not offer the old releases (ControlCenter 1.1.7 / PrintRestore 1.0.5) as
-# "updates". 1.1.7 cannot talk to this fork; 1.0.5 does not build on Python >= 3.12.
-# Switch both to the published releases once ControlCenter 1.1.8 and TwinDragonPrintRestore 1.0.6 exist.
+# Pinned to tested RELEASE tags (a branch archive has no usable version number). ControlCenter >= 1.1.8 is required:
+# 1.1.7 hardcodes the old fleet API key; TwinDragonPrintRestore >= 1.0.6 builds on Python >= 3.12.
+# Later releases arrive through OctoPrint's Software Update.
 # CC_SOURCE: URL/path, "latest" = latest GitHub release of $CC_REPO, "skip" = do not install ControlCenter.
-CC_SOURCE="https://github.com/${CC_REPO}/archive/refs/tags/1.1.8rc1.zip"
+CC_SOURCE="https://github.com/${CC_REPO}/archive/refs/tags/1.1.8.zip"
 # Plugins every Fracktal printer needs (ControlCenter calls TwinDragonPrintRestore for power-loss recovery).
-DEFAULT_PLUGINS="https://github.com/FracktalWorks/TwinDragonPrintRestore/archive/refs/tags/1.0.6rc1.zip"
+DEFAULT_PLUGINS="https://github.com/FracktalWorks/TwinDragonPrintRestore/archive/refs/tags/1.0.6.zip"
 EXTRA_PLUGINS=""    # space separated pip specs, added to DEFAULT_PLUGINS ("--plugins none" drops the defaults)
 SYSTEM_SITE=1       # ControlCenter needs apt's PyQt5 / opencv, so share system packages
 DO=0; ROLLBACK=0; PURGE=0; NO_START=0
