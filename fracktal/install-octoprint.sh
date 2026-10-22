@@ -5,7 +5,8 @@
 #   bash install-octoprint.sh --yes                 # install latest release (replaces an old OctoPrint)
 #   bash install-octoprint.sh --yes --version 1.11.8.post1
 #   bash install-octoprint.sh --yes --source ./dist/OctoPrint-1.11.8.post1-py3-none-any.whl
-#   bash install-octoprint.sh --rollback --yes      # put the previous venv + config back
+#   bash install-octoprint.sh --rollback --yes      # put the previous venv, service file + config back
+#   --plugins "spec ..."   extra pip plugins (TwinDragonPrintRestore is always added; "none" = no plugins)
 #
 # Run as the printer user (normally `pi`), NOT as root; it uses sudo for systemd only.
 # Idempotent. Never overwrites an existing ~/.octoprint/config.yaml. The previous venv is
@@ -23,14 +24,21 @@ VENV="${HOME_DIR}/OctoPrint/venv"
 BASEDIR="${HOME_DIR}/.octoprint"
 VERSION=""          # empty = latest GitHub release of $OP_REPO
 SOURCE=""           # URL / wheel / sdist / source dir; overrides --version
-CC_SOURCE=""        # empty = latest release of $CC_REPO; "skip" = do not install ControlCenter
-EXTRA_PLUGINS=""    # space separated pip specs
+# Pinned to pre-release TAGS (not GitHub releases): an archive of a tag carries a real version number, so
+# OctoPrint's Software Update does not offer the old releases (ControlCenter 1.1.7 / PrintRestore 1.0.5) as
+# "updates". 1.1.7 cannot talk to this fork; 1.0.5 does not build on Python >= 3.12.
+# Switch both to the published releases once ControlCenter 1.1.8 and TwinDragonPrintRestore 1.0.6 exist.
+# CC_SOURCE: URL/path, "latest" = latest GitHub release of $CC_REPO, "skip" = do not install ControlCenter.
+CC_SOURCE="https://github.com/${CC_REPO}/archive/refs/tags/1.1.8rc1.zip"
+# Plugins every Fracktal printer needs (ControlCenter calls TwinDragonPrintRestore for power-loss recovery).
+DEFAULT_PLUGINS="https://github.com/FracktalWorks/TwinDragonPrintRestore/archive/refs/tags/1.0.6rc1.zip"
+EXTRA_PLUGINS=""    # space separated pip specs, added to DEFAULT_PLUGINS ("--plugins none" drops the defaults)
 SYSTEM_SITE=1       # ControlCenter needs apt's PyQt5 / opencv, so share system packages
 DO=0; ROLLBACK=0; PURGE=0; NO_START=0
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TS="$(date +%Y%m%d-%H%M%S)"
 
-usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --yes) DO=1 ;;
@@ -86,12 +94,15 @@ venv_octoprint_version() { [ -x "$1/bin/python" ] && "$1/bin/python" -c 'import 
 if [ "$ROLLBACK" = 1 ]; then
   OLD="$(ls -d "${VENV}".old-* 2>/dev/null | sort | tail -1 || true)"
   BK="$(ls -t "${HOME_DIR}"/octoprint-backup-*.tar.gz 2>/dev/null | head -1 || true)"
-  [ -n "$OLD" ] || die "no ${VENV}.old-* to roll back to"
-  log "Rollback: venv ${OLD} -> ${VENV}; config backup: ${BK:-none}"
+  SBK="$(ls -t "${HOME_DIR}"/octoprint-backup-*.service 2>/dev/null | head -1 || true)"
+  [ -n "$OLD" ] || [ -n "$SBK" ] || die "nothing to roll back to (no ${VENV}.old-* and no saved octoprint.service)"
+  log "Rollback: venv ${OLD:-<unchanged>}; service file ${SBK:-<unchanged>}; config backup ${BK:-none}"
   run sudo systemctl stop octoprint
-  run mv "$VENV" "${VENV}.failed-${TS}"
-  run mv "$OLD" "$VENV"
+  if [ -n "$OLD" ]; then run mv "$VENV" "${VENV}.failed-${TS}"; run mv "$OLD" "$VENV"; fi
   [ -z "$BK" ] || run tar -C "$HOME_DIR" -xzf "$BK"
+  if [ -n "$SBK" ]; then   # e.g. the old install lived in ~/oprint: point the unit back at it
+    rw_on; run sudo cp "$SBK" /etc/systemd/system/octoprint.service; run sudo systemctl daemon-reload; rw_off; RW_FLIPPED=0
+  fi
   run sudo systemctl start octoprint
   [ "$DO" = 1 ] || log "Dry run only. Re-run with --yes."
   exit 0
@@ -118,7 +129,7 @@ if [ -z "$SOURCE" ]; then
   if [ -z "$VERSION" ]; then VERSION="$(github_latest "$OP_REPO")" || die "cannot query latest release of $OP_REPO (no internet? pass --source/--version)"; fi
   SOURCE="https://github.com/${OP_REPO}/archive/refs/tags/${VERSION}.zip"
 fi
-if [ "$CC_SOURCE" = "" ]; then
+if [ "$CC_SOURCE" = "latest" ]; then
   CCV="$(github_latest "$CC_REPO" 2>/dev/null || true)"
   CC_SOURCE="${CCV:+https://github.com/${CC_REPO}/archive/refs/tags/${CCV}.zip}"
   [ -n "$CC_SOURCE" ] || warn "no published ControlCenter release found; pass --cc-source <url|path> or 'skip'"
@@ -133,7 +144,7 @@ fi
 
 if [ "$DO" != 1 ]; then
   log "Dry run: steps that would run: backup ${BASEDIR} -> ~/octoprint-backup-${TS}.tar.gz; move ${VENV} -> ${VENV}.old-${TS};"
-  log "         create venv (system-site-packages=${SYSTEM_SITE}); pip install OctoPrint + ControlCenter${EXTRA_PLUGINS:+ + $EXTRA_PLUGINS};"
+  log "         create venv (system-site-packages=${SYSTEM_SITE}); pip install OctoPrint + ControlCenter + plugins ($DEFAULT_PLUGINS $EXTRA_PLUGINS);"
   log "         seed config.yaml if absent (unique api key + secretKey); install octoprint.service; start; verify /api/version."
   log "Re-run with --yes to apply."; exit 0
 fi
@@ -159,8 +170,9 @@ NEW="$(venv_octoprint_version "$VENV")"; log "Installed OctoPrint ${NEW}"
 if [ "$CC_SOURCE" != "skip" ] && [ -n "$CC_SOURCE" ]; then
   log "Installing ControlCenter plugin"; "$VENV/bin/pip" install -q "$CC_SOURCE"
 fi
+if [ "$EXTRA_PLUGINS" = "none" ]; then PLUGINS=""; else PLUGINS="$DEFAULT_PLUGINS $EXTRA_PLUGINS"; fi
 # shellcheck disable=SC2086
-[ -z "$EXTRA_PLUGINS" ] || "$VENV/bin/pip" install -q $EXTRA_PLUGINS
+[ -z "${PLUGINS// /}" ] || { log "Installing plugins: $PLUGINS"; "$VENV/bin/pip" install -q $PLUGINS; }
 
 # ---- 5. config: seed only if absent -----------------------------------------------------------
 mkdir -p "$BASEDIR"
@@ -188,6 +200,7 @@ fi
 
 # ---- 6. service ---------------------------------------------------------------------------------
 rw_on
+[ -f /etc/systemd/system/octoprint.service ] && cp /etc/systemd/system/octoprint.service "${HOME_DIR}/octoprint-backup-${TS}.service"
 sed -e "s#^User=.*#User=${USER_NAME}#" -e "s#^ExecStart=.*#ExecStart=${VENV}/bin/octoprint serve --basedir ${BASEDIR}#" \
     "$HERE/systemd/octoprint.service" | sudo tee /etc/systemd/system/octoprint.service >/dev/null
 sudo systemctl daemon-reload

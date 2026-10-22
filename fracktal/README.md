@@ -36,10 +36,17 @@ bash fracktal/install-octoprint.sh --yes            # install latest release; re
 bash fracktal/install-octoprint.sh --rollback --yes # restore previous venv + config
 ```
 
-It detects the existing install (including 1.7.x), backs up `~/.octoprint`, keeps the old venv as `OctoPrint/venv.old-<time>`,
-installs OctoPrint and ControlCenter into `~/OctoPrint/venv`, seeds `config.yaml` **only if absent** with a unique API key and
-`secretKey` per printer, installs `octoprint.service`, and checks `/api/version`. Plugins installed in the old venv are listed but
-not migrated; reinstall them with `--plugins "pkg1 pkg2"`.
+It detects the existing install (including 1.7.x, and old venvs such as `~/oprint`), backs up `~/.octoprint` and the old
+`octoprint.service`, keeps a replaced venv as `OctoPrint/venv.old-<time>`, installs OctoPrint, **ControlCenter** (tag
+`1.1.8rc1` until 1.1.8 is released; release 1.1.7 cannot talk to this fork) and
+**TwinDragonPrintRestore** (tag `1.0.6rc1`; release 1.0.5 does not build on Python 3.12+; always install from tags,
+a branch zip has no usable version number) into `~/OctoPrint/venv`, seeds `config.yaml`
+**only if absent** with a unique API key and `secretKey` per printer, installs `octoprint.service`, and checks `/api/version`.
+Plugins installed in the old venv are listed but not migrated; reinstall them with `--plugins "pkg1 pkg2"`.
+`--rollback` restores the old venv, service file and config.
+
+Normally you do not run this by hand: `agent-3dprinter-expert/deploy/deploy_printer.py octoprint` uploads and runs it
+(guide: `agent-3dprinter-expert/docs/DEPLOYMENT.md`).
 
 ## Automatic updates for printers on this fork
 
