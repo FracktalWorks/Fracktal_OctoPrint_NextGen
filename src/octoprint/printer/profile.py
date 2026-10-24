@@ -637,6 +637,12 @@ class PrinterProfileManager:
             profile["heatedFilament"] = False
             modified = True
 
+        # without this, every profile from before the Fracktal secondary heaters fails
+        # _ensure_valid_profile and the default profile gets reset to factory values
+        if "hasSecondaryHeaters" not in profile:
+            profile["hasSecondaryHeaters"] = False
+            modified = True
+
         return modified
 
     def _ensure_valid_profile(self, profile):
