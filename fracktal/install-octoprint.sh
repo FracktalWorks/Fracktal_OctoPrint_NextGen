@@ -29,8 +29,9 @@ SOURCE=""           # URL / wheel / sdist / source dir; overrides --version
 # Later releases arrive through OctoPrint's Software Update.
 # CC_SOURCE: URL/path, "latest" = latest GitHub release of $CC_REPO, "skip" = do not install ControlCenter.
 CC_SOURCE="https://github.com/${CC_REPO}/archive/refs/tags/1.1.8.zip"
-# Plugins every Fracktal printer needs (ControlCenter calls TwinDragonPrintRestore for power-loss recovery).
-DEFAULT_PLUGINS="https://github.com/FracktalWorks/TwinDragonPrintRestore/archive/refs/tags/1.0.6.zip"
+# Plugins every Fracktal printer needs (ControlCenter calls TwinDragonPrintRestore for power-loss recovery;
+# OctoKlipper = the FracktalWorks fork, which takes its updates from FracktalWorks, not upstream).
+DEFAULT_PLUGINS="https://github.com/FracktalWorks/TwinDragonPrintRestore/archive/refs/tags/1.0.6.zip https://github.com/FracktalWorks/OctoprintKlipperPlugin/archive/refs/tags/0.4.1.zip"
 EXTRA_PLUGINS=""    # space separated pip specs, added to DEFAULT_PLUGINS ("--plugins none" drops the defaults)
 SYSTEM_SITE=1       # ControlCenter needs apt's PyQt5 / opencv, so share system packages
 DO=0; ROLLBACK=0; PURGE=0; NO_START=0
