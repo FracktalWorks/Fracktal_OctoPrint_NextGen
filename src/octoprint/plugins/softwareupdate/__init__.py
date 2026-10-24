@@ -63,6 +63,18 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 ##~~ Plugin
 
 
+# Update checks owned by Fracktal Works: their source is fixed to FracktalWorks repositories and must
+# not be rewritten by plugins.octoprint.org's update_check_overlay.json. That overlay maps "octoprint"
+# to user OctoPrint (-> HTTP 404 for this fork, so printers never saw a Fracktal release) and
+# "klipper" (OctoKlipper) to upstream's AliceGrey repository instead of FracktalWorks.
+FRACKTAL_MANAGED_CHECKS = frozenset({"octoprint", "klipper", "ControlCenter", "TwinDragonPrintRestore"})
+
+
+def without_fracktal_checks(overlay):
+    """The check overlay without entries for Fracktal-managed checks."""
+    return {k: v for k, v in (overlay or {}).items() if k not in FRACKTAL_MANAGED_CHECKS}
+
+
 class SoftwareUpdatePlugin(
     octoprint.plugin.BlueprintPlugin,
     octoprint.plugin.SettingsPlugin,
@@ -462,6 +474,7 @@ class SoftwareUpdatePlugin(
                 self._logger.info("Not fetching check overlays, we are offline")
                 self._overlay_cache = {}
 
+            self._overlay_cache = without_fracktal_checks(self._overlay_cache)
             self._overlay_cache_timestamp = time.time()
 
             default_overlay = {}
