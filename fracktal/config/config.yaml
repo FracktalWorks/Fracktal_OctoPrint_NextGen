@@ -79,7 +79,9 @@ plugins:
   klipper:
     configuration:
       confirm_reload: false
-      logpath: /home/pi/printer_data/logs/klippy.log
+      # a folder: OctoKlipper reads <logpath>/klippy.log. Config folder (~/printer_data/config) and
+      # Klipper path (~/klipper_IDEX/) are the defaults of the FracktalWorks OctoKlipper fork.
+      logpath: /home/pi/printer_data/logs
     connection:
       replace_connection_panel: false
   softwareupdate:

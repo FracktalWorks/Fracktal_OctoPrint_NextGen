@@ -38,7 +38,7 @@ bash fracktal/install-octoprint.sh --rollback --yes # restore previous venv + co
 
 It detects the existing install (including 1.7.x, and old venvs such as `~/oprint`), backs up `~/.octoprint` and the old
 `octoprint.service`, keeps a replaced venv as `OctoPrint/venv.old-<time>`, installs OctoPrint, **ControlCenter 1.1.8** (1.1.7 and older cannot talk to this fork) and
-**TwinDragonPrintRestore 1.0.6** (1.0.5 and older do not build on Python 3.12+) and **OctoKlipper 0.4.1** (the
+**TwinDragonPrintRestore 1.0.6** (1.0.5 and older do not build on Python 3.12+) and **OctoKlipper 0.4.2** (the
 [FracktalWorks fork](https://github.com/FracktalWorks/OctoprintKlipperPlugin), branch `production`) -- always installed from release tags,
 a branch zip has no usable version number into `~/OctoPrint/venv`, seeds `config.yaml`
 **only if absent** with a unique API key and `secretKey` per printer, installs `octoprint.service`, and checks `/api/version`.
