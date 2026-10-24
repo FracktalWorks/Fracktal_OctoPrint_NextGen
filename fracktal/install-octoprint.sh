@@ -7,6 +7,8 @@
 #   bash install-octoprint.sh --yes --source ./dist/OctoPrint-1.11.8.post1-py3-none-any.whl
 #   bash install-octoprint.sh --rollback --yes      # put the previous venv, service file + config back
 #   --plugins "spec ..."   extra pip plugins (TwinDragonPrintRestore is always added; "none" = no plugins)
+#   --default-plugins "spec ..."  replace the pinned default plugins, e.g. with uploaded local archives
+#                          (deploy_printer.py does this so slow printer networks never download them)
 #
 # Run as the printer user (normally `pi`), NOT as root; it uses sudo for systemd only.
 # Idempotent. Never overwrites an existing ~/.octoprint/config.yaml. The previous venv is
@@ -46,6 +48,7 @@ while [ $# -gt 0 ]; do
     --source) SOURCE="$2"; shift ;;
     --cc-source) CC_SOURCE="$2"; shift ;;
     --plugins) EXTRA_PLUGINS="$2"; shift ;;
+    --default-plugins) DEFAULT_PLUGINS="$2"; shift ;;
     --venv) VENV="$2"; shift ;;
     --basedir) BASEDIR="$2"; shift ;;
     --no-system-site-packages) SYSTEM_SITE=0 ;;
@@ -158,6 +161,18 @@ if [ -d "$BASEDIR" ]; then
 fi
 sudo systemctl stop octoprint 2>/dev/null || true
 if [ -d "$VENV" ]; then mv "$VENV" "${VENV}.old-${TS}"; fi
+# From here on OctoPrint is down: any failure puts the previous venv back and starts the old service
+# again, so a broken download or plugin build never leaves the printer without OctoPrint.
+restore_previous() {
+  trap - ERR
+  warn "install failed; restoring the previous venv and starting the old service"
+  rm -rf "$VENV"
+  [ -d "${VENV}.old-${TS}" ] && mv "${VENV}.old-${TS}" "$VENV"
+  sudo systemctl start octoprint || true
+  exit 1
+}
+set -E
+trap restore_previous ERR
 mkdir -p "$(dirname "$VENV")"
 log "Creating venv (system-site-packages=${SYSTEM_SITE})"
 if [ "$SYSTEM_SITE" = 1 ]; then python3 -m venv --system-site-packages "$VENV"; else python3 -m venv "$VENV"; fi
@@ -197,6 +212,8 @@ if [ ! -f "$BASEDIR/users.yaml" ]; then
   log "No users.yaml: creating the 'admin' user (random password, auto-login covers the UI)"
   "$VENV/bin/octoprint" --basedir "$BASEDIR" user add admin --password "$(python3 -c 'import secrets;print(secrets.token_urlsafe(12))')" --admin >/dev/null 2>&1 || warn "could not create admin user"
 fi
+
+trap - ERR   # the service file is replaced next; --rollback covers it from here
 
 # ---- 6. service ---------------------------------------------------------------------------------
 rw_on
