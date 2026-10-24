@@ -142,7 +142,7 @@ log "ControlCenter: ${CC_SOURCE:-<none>}"
 OLD_PLUGINS=""
 if [ -x "$VENV/bin/pip" ]; then
   OLD_PLUGINS="$("$VENV/bin/pip" freeze 2>/dev/null | grep -i '^octoprint[-_]' | grep -vi '^octoprint==' || true)"
-  [ -z "$OLD_PLUGINS" ] || { log "Plugins in the OLD venv (NOT migrated automatically):"; printf '   %s\n' $OLD_PLUGINS; }
+  [ -z "$OLD_PLUGINS" ] || { log "Plugins in the OLD venv (NOT migrated automatically):"; printf '%s\n' "$OLD_PLUGINS" | sed 's/^/   /'; }
 fi
 
 if [ "$DO" != 1 ]; then
